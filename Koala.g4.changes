@@ -12,7 +12,7 @@ blockelse: block
 
 blockfun: block
 ;
-
+###
 stat: IF '(' cond ')' blockif END #if
 	| IF '(' cond ')' blockif ELSE blockelse END #ifelse
 	| FUNCTION funname '(' ID (',' ID)* ')' blockfun END #fun
