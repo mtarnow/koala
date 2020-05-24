@@ -15,14 +15,17 @@ blockfun: block
 
 stat: IF '(' cond ')' blockif END #if
 	| IF '(' cond ')' blockif ELSE blockelse END #ifelse
-	| FUNCTION ID '(' ID (',' ID)* ')' blockfun END #fun
+	| FUNCTION funname '(' ID (',' ID)* ')' blockfun END #fun
 	| RET expr0
 ;
 
-expr0: ID '(' fparam (',' fparam)* ')'
+expr0: ID '(' fparam (',' fparam)* ')' #call
 ;
 
 RET: 'return'
+;
+
+funname: ID
 ;
 
 IF: 'if'
