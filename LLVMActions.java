@@ -300,4 +300,27 @@ public class LLVMActions extends KoalaBaseListener {
         System.exit(1);
     }
 
+    @Override
+    public void exitIf(KoalaParser.IfContext ctx) { }
+
+    @Override public void enterBlockif(KoalaParser.BlockifContext ctx){
+        LLVMGenerator.ifstart();
+    }
+
+    @Override
+    public void exitBlockif(KoalaParser.BlockifContext ctx) {
+        LLVMGenerator.ifend();
+    }
+
+    @Override public void exitCond(KoalaParser.CondContext ctx) {
+        String ID = ctx.expr0().
+        String INT = "ll";
+        if( variables.containsKey(ID) ) {
+            LLVMGenerator.icmp( ID, INT );
+        } else {
+            ctx.getStart().getLine();
+            System.err.println("Line "+ ctx.getStart().getLine()+", unknown variable: "+ID);
+        }
+    }
+
 }

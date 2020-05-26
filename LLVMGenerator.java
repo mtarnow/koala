@@ -1,11 +1,15 @@
+import java.util.Stack;
 
 class LLVMGenerator{
 
    static String header_text = "";
    static String main_text = "";
    static int reg = 1;
+   static int br = 1;
    static int str_reg = 1;
    static int tmp_reg = 1;
+
+   static Stack<Integer> brstack = new Stack<Integer>();
 
    static void printf(String value){
       main_text += "%"+reg+" = getelementptr inbounds [10000 x i8], [10000 x i8]* "+value+".0, i32 0, i32 0\n";
@@ -193,6 +197,24 @@ class LLVMGenerator{
       text += main_text;
       text += "ret i32 0 }\n";
       return text;
+   }
+   static void ifstart(){
+      br++;
+      main_text += "br i1 %"+(reg-1)+", label %true"+br+", label %false"+br+"\n";
+      main_text += "true"+br+":\n";
+      brstack.push(br);
+   }
+
+   static void ifend(){
+      int b = brstack.pop();
+      main_text += "br label %false"+b+"\n";
+      main_text += "false"+b+":\n";
+   }
+   static void icmp(String id, String value){
+      main_text += "%"+reg+" = load i32, i32* %"+id+"\n";
+      reg++;
+      main_text += "%"+reg+" = icmp eq i32 %"+(reg-1)+", "+value+"\n";
+      reg++;
    }
 
 }

@@ -1,12 +1,29 @@
 
 grammar Koala;
 
-prog: ( stat? NEWLINE )* 
+prog: block
 ;
 
-stat:	 PRINT strexpr   	#print
-	| ID '=' expr0		#assign
-	| READ ID		#read
+block: (stat NEWLINE)*
+;
+
+blockif: block
+;
+
+blockelse: block
+;
+
+blockfun: block
+;
+
+stat: IF '(' cond ')' blockif END                        #if
+    | IF '(' cond ')' blockif ELSE blockelse END         #ifelse
+    | FUNCTION funname '(' ID (',' ID)* ')' blockfun END #fun
+    | PRINT strexpr   	                                 #print
+	| ID '=' expr0		                                 #assign
+	| READ ID		                                     #read
+    | RET expr0                                          #ret
+
 ;
 
 expr0:  expr1			#single0
@@ -81,3 +98,40 @@ NEWLINE:	'\r'? '\n'
 
 WS:   (' '|'\t')+ { skip(); }
     ;
+
+RET: 'return'
+;
+
+funname: ID
+;
+
+IF: 'if'
+;
+
+ELSE: 'else'
+;
+
+FUNCTION: 'function'
+;
+
+END: 'end'
+;
+fparam: expr0
+;
+
+cond: expr0 comp expr0
+	| strexpr strcomp strexpr
+;
+
+
+comp: '<'	#less
+	|'<='	#lessequal
+	|'=='	#equal
+	|'!='	#notequal
+	|'>='	#moreequal
+	|'>'	#more
+;
+
+strcomp: '=='	#strequal
+	|'!='	#strnotequal
+;
