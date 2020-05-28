@@ -317,14 +317,14 @@ public class LLVMActions extends KoalaBaseListener {
     }
 
     @Override
-    public void exitCond(KoalaParser.CondContext ctx) {
+    public void exitEqual(KoalaParser.EqualContext ctx) {
         Value v1 = stack.pop();
         Value v2 = stack.pop();
         if( v1.type == v2.type ) {
             if( v1.type == VarType.INT )
-                LLVMGenerator.icmp(v2.name, v1.name);
+                LLVMGenerator.eq(v2.name, v1.name);
             if( v1.type == VarType.REAL )
-                LLVMGenerator.fcmp(v2.name, v1.name);
+                LLVMGenerator.oeq(v2.name, v1.name);
             //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
             if (v1.type == VarType.STRING)
                 error(ctx.getStart().getLine(), "koala doesn't know how compare Strings :C");
@@ -332,4 +332,90 @@ public class LLVMActions extends KoalaBaseListener {
             error(ctx.getStart().getLine(), "add type mismatch");
         }
     }
+
+    @Override
+    public void exitMore(KoalaParser.MoreContext ctx) {
+        Value v1 = stack.pop();
+        Value v2 = stack.pop();
+        if( v1.type == v2.type ) {
+            if( v1.type == VarType.INT )
+                LLVMGenerator.sgt(v2.name, v1.name);
+            if( v1.type == VarType.REAL )
+                LLVMGenerator.ogt(v2.name, v1.name);
+            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            if (v1.type == VarType.STRING)
+                error(ctx.getStart().getLine(), "koala doesn't know how compare Strings :C");
+        } else {
+            error(ctx.getStart().getLine(), "add type mismatch");
+        }
+    }
+
+    @Override
+    public void exitLess(KoalaParser.LessContext ctx) {
+        Value v1 = stack.pop();
+        Value v2 = stack.pop();
+        if( v1.type == v2.type ) {
+            if( v1.type == VarType.INT )
+                LLVMGenerator.slt(v2.name, v1.name);
+            if( v1.type == VarType.REAL )
+                LLVMGenerator.olt(v2.name, v1.name);
+            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            if (v1.type == VarType.STRING)
+                error(ctx.getStart().getLine(), "koala doesn't know how compare Strings :C");
+        } else {
+            error(ctx.getStart().getLine(), " type mismatch");
+        }
+    }
+
+    @Override
+    public void exitNotequal(KoalaParser.NotequalContext ctx) {
+        Value v1 = stack.pop();
+        Value v2 = stack.pop();
+        if( v1.type == v2.type ) {
+            if( v1.type == VarType.INT )
+                LLVMGenerator.ne(v2.name, v1.name);
+            if( v1.type == VarType.REAL )
+                LLVMGenerator.une(v2.name, v1.name);
+            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            if (v1.type == VarType.STRING)
+                error(ctx.getStart().getLine(), "koala doesn't know how compare Strings :C");
+        } else {
+            error(ctx.getStart().getLine(), "type mismatch");
+        }
+    }
+
+    @Override
+    public void exitLessequal(KoalaParser.LessequalContext ctx) {
+        Value v1 = stack.pop();
+        Value v2 = stack.pop();
+        if( v1.type == v2.type ) {
+            if( v1.type == VarType.INT )
+                LLVMGenerator.sle(v2.name, v1.name);
+            if( v1.type == VarType.REAL )
+                LLVMGenerator.ole(v2.name, v1.name);
+            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            if (v1.type == VarType.STRING)
+                error(ctx.getStart().getLine(), "koala doesn't know how compare Strings :C");
+        } else {
+            error(ctx.getStart().getLine(), "type mismatch");
+        }
+    }
+
+    @Override
+    public void exitMoreequal(KoalaParser.MoreequalContext ctx) {
+        Value v1 = stack.pop();
+        Value v2 = stack.pop();
+        if( v1.type == v2.type ) {
+            if( v1.type == VarType.INT )
+                LLVMGenerator.sge(v2.name, v1.name);
+            if( v1.type == VarType.REAL )
+                LLVMGenerator.oge(v2.name, v1.name);
+            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            if (v1.type == VarType.STRING)
+                error(ctx.getStart().getLine(), "koala doesn't know how compare Strings :C");
+        } else {
+            error(ctx.getStart().getLine(), "type mismatch");
+        }
+    }
+
 }

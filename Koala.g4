@@ -28,6 +28,11 @@ IF: 'if'
 ;
 END: 'end';
 cond: expr0 '==' expr0      #equal
+    | expr0 '>' expr0       #more
+    | expr0 '<' expr0       #less
+    | expr0 '!=' expr0      #notequal
+    | expr0 '<=' expr0      #lessequal
+    | expr0 '>=' expr0      #moreequal
 ;
 
 expr0:  expr1			#single0

@@ -210,13 +210,58 @@ class LLVMGenerator{
       main_text += "br label %false"+b+"\n";
       main_text += "false"+b+":\n";
    }
-   static void fcmp(String value, String value2){
+   static void oeq(String value, String value2){
       main_text += "%"+reg+" = fcmp oeq double "+value+", "+value2+"\n";
       reg++;
    }
-   static void icmp(String value, String value2){
+   static void eq(String value, String value2){
       main_text += "%"+reg+" = icmp eq i32 "+value+", "+value2+"\n";
       reg++;
    }
+   static void oge(String value, String value2){
+      main_text += "%"+reg+" = fcmp oge double "+value+", "+value2+"\n";
+      reg++;
+   }
+   static void sge(String value, String value2){
+      main_text += "%"+reg+" = icmp sge i32 "+value+", "+value2+"\n";
+      reg++;
+   }
+   static void ole(String value, String value2){
+      main_text += "%"+reg+" = fcmp sge double "+value+", "+value2+"\n";
+      reg++;
+   }
+   static void sle(String value, String value2){
+      main_text += "%"+reg+" = icmp sle i32 "+value+", "+value2+"\n";
+      reg++;
+   }
+
+   static void une(String value, String value2){
+      main_text += "%"+reg+" = fcmp une double "+value+", "+value2+"\n";
+      reg++;
+   }
+   static void ne(String value, String value2){
+      main_text += "%"+reg+" = icmp ne i32 "+value+", "+value2+"\n";
+      reg++;
+   }
+
+   static void olt(String value, String value2){
+      main_text += "%"+reg+" = fcmp olt double "+value+", "+value2+"\n";
+      reg++;
+   }
+   static void slt(String value, String value2){
+      main_text += "%"+reg+" = icmp slt i32 "+value+", "+value2+"\n";
+      reg++;
+   }
+
+   static void ogt(String value, String value2){
+      main_text += "%"+reg+" = fcmp ogt double "+value+", "+value2+"\n";
+      reg++;
+   }
+   static void sgt(String value, String value2){
+      main_text += "%"+reg+" = icmp sgt i32 "+value+", "+value2+"\n";
+      reg++;
+   }
+
 
 }
+
