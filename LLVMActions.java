@@ -27,6 +27,7 @@ public class LLVMActions extends KoalaBaseListener {
     HashMap<String, TypeInfo> variables = new HashMap<String, TypeInfo>();
     Stack<Value> stack = new Stack<Value>();
 
+    //DONE ROZKMINA
     @Override
     public void exitAssign(KoalaParser.AssignContext ctx) {
         String ID = ctx.ID().getText();
@@ -62,12 +63,13 @@ public class LLVMActions extends KoalaBaseListener {
             variables.get(ID).type = v.type;
         }
     }
-
+    //tutaj tylko dopisanie tych wszystkich funkcji które sa nam potrzebne
     @Override
     public void exitProg(KoalaParser.ProgContext ctx) {
         System.out.println( LLVMGenerator.generate() );
     }
 
+    //TEgo nie ogarniam tzn to są  te dziwne działania na stringach
     @Override
     public void exitString(KoalaParser.StringContext ctx) {
         String val = ctx.STRING().getText();
@@ -300,8 +302,6 @@ public class LLVMActions extends KoalaBaseListener {
         System.exit(1);
     }
 
-    @Override
-    public void exitIf(KoalaParser.IfContext ctx) { }
 
     @Override public void enterBlockif(KoalaParser.BlockifContext ctx){
         LLVMGenerator.ifstart();
@@ -312,15 +312,24 @@ public class LLVMActions extends KoalaBaseListener {
         LLVMGenerator.ifend();
     }
 
-    @Override public void exitCond(KoalaParser.CondContext ctx) {
-        String ID = ctx.expr0().
-        String INT = "ll";
-        if( variables.containsKey(ID) ) {
-            LLVMGenerator.icmp( ID, INT );
-        } else {
-            ctx.getStart().getLine();
-            System.err.println("Line "+ ctx.getStart().getLine()+", unknown variable: "+ID);
-        }
+    @Override
+    public void exitIf(KoalaParser.IfContext ctx) {
     }
 
+    @Override
+    public void exitCond(KoalaParser.CondContext ctx) {
+        Value v1 = stack.pop();
+        Value v2 = stack.pop();
+        if( v1.type == v2.type ) {
+            if( v1.type == VarType.INT )
+                LLVMGenerator.icmp(v2.name, v1.name);
+            if( v1.type == VarType.REAL )
+                LLVMGenerator.fcmp(v2.name, v1.name);
+            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            if (v1.type == VarType.STRING)
+                error(ctx.getStart().getLine(), "koala doesn't know how compare Strings :C");
+        } else {
+            error(ctx.getStart().getLine(), "add type mismatch");
+        }
+    }
 }

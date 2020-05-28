@@ -210,10 +210,12 @@ class LLVMGenerator{
       main_text += "br label %false"+b+"\n";
       main_text += "false"+b+":\n";
    }
-   static void icmp(String id, String value){
-      main_text += "%"+reg+" = load i32, i32* %"+id+"\n";
+   static void fcmp(String value, String value2){
+      main_text += "%"+reg+" = fcmp oeq double "+value+", "+value2+"\n";
       reg++;
-      main_text += "%"+reg+" = icmp eq i32 %"+(reg-1)+", "+value+"\n";
+   }
+   static void icmp(String value, String value2){
+      main_text += "%"+reg+" = icmp eq i32 "+value+", "+value2+"\n";
       reg++;
    }
 

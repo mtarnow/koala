@@ -16,14 +16,18 @@ blockelse: block
 blockfun: block
 ;
 
-stat: IF '(' cond ')' blockif END                        #if
+stat: IF '('cond ')' NEWLINE blockif END                 #if
     | IF '(' cond ')' blockif ELSE blockelse END         #ifelse
     | FUNCTION funname '(' ID (',' ID)* ')' blockfun END #fun
     | PRINT strexpr   	                                 #print
 	| ID '=' expr0		                                 #assign
 	| READ ID		                                     #read
     | RET expr0                                          #ret
-
+;
+IF: 'if'
+;
+END: 'end';
+cond: expr0 '==' expr0      #equal
 ;
 
 expr0:  expr1			#single0
@@ -54,6 +58,7 @@ strexpr: STRING                 #string
         | strexpr ADD strexpr	#stradd
     ;
 
+
 PRINT:	'print' 
     ;
 
@@ -68,6 +73,8 @@ TOREAL: '(real)'
 
 TOSTRING: '(str)'
     ;
+
+
 
 ID:   ('a'..'z'|'A'..'Z')+
    ;
@@ -105,31 +112,14 @@ RET: 'return'
 funname: ID
 ;
 
-IF: 'if'
-;
-
 ELSE: 'else'
 ;
 
 FUNCTION: 'function'
 ;
 
-END: 'end'
-;
+
 fparam: expr0
-;
-
-cond: expr0 comp expr0
-	| strexpr strcomp strexpr
-;
-
-
-comp: '<'	#less
-	|'<='	#lessequal
-	|'=='	#equal
-	|'!='	#notequal
-	|'>='	#moreequal
-	|'>'	#more
 ;
 
 strcomp: '=='	#strequal
