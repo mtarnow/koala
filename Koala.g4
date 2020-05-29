@@ -18,9 +18,12 @@ blockelse: block
 
 blockfun: block
 ;
+blockwhile: block
+;
 
 stat: IF '(' cond ')' NEWLINE blockifelse ELSE NEWLINE blockelse END #ifelse
     | IF '('cond ')' NEWLINE blockif END                 #if
+    | WHILE '(' whilecond ')' NEWLINE blockwhile END          #whileloop
     | FUNCTION funname '(' ID (',' ID)* ')' blockfun END #fun
     | PRINT strexpr   	                                 #print
 	| ID '=' expr0		                                 #assign
@@ -30,6 +33,11 @@ stat: IF '(' cond ')' NEWLINE blockifelse ELSE NEWLINE blockelse END #ifelse
 IF: 'if'
 ;
 END: 'end';
+
+WHILE: 'while';
+
+whilecond: cond;
+
 cond: expr0 '==' expr0      #equal
     | expr0 '>' expr0       #more
     | expr0 '<' expr0       #less
@@ -39,7 +47,7 @@ cond: expr0 '==' expr0      #equal
 ;
 
 expr0:  expr1			#single0
-        | expr0 ADD expr0	#add
+    | expr0 ADD expr0	#add
 	| expr0 SUB expr0	#sub
 	| strexpr		#strexp
 ;

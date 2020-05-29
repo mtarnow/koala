@@ -223,6 +223,31 @@ class LLVMGenerator{
       main_text += "br label %end"+b+"\n";
       main_text += "end"+b+":\n";
    }
+   static void enterwhile() {
+      br++;
+      brstack.push(br);
+   }
+
+   static void exitwhile() {
+      int b = brstack.pop();
+      main_text += "br label %while"+b+"\n\n";
+      main_text += "while"+b+":\n";
+      brstack.push(b);
+   }
+
+   static void enterblockwhile(){
+      int b = brstack.pop();
+      main_text += "br i1 %"+(reg-1)+", label %true"+b+", label %false"+b+"\n";
+      main_text += "true"+b+":\n";
+      brstack.push(b);
+   }
+
+   static void exitblockwhile(){
+      int b = brstack.pop();
+      main_text += "br label %while"+b+"\n";
+      main_text += "false"+b+":\n";
+      brstack.push(b);
+   }
 
    static void oeq(String value, String value2){
       main_text += "%"+reg+" = fcmp oeq double "+value+", "+value2+"\n";
@@ -275,7 +300,5 @@ class LLVMGenerator{
       main_text += "%"+reg+" = icmp sgt i32 "+value+", "+value2+"\n";
       reg++;
    }
-
-
 }
 

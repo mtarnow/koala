@@ -1,7 +1,8 @@
-x = 1.9
-if (x == 2.8)
+x = 1
+while (x <= 4)
     print "KOALA"
-else
-    print "EUKALIPTUS"
+    x = x + 1
 end
+print "EUKALIPTUS"
+
 

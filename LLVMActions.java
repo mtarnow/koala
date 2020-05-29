@@ -301,7 +301,7 @@ public class LLVMActions extends KoalaBaseListener {
         System.exit(1);
     }
 
-
+    //IF, IF ELSE
     @Override public void enterBlockif(KoalaParser.BlockifContext ctx){
         LLVMGenerator.ifstart();
     }
@@ -328,6 +328,24 @@ public class LLVMActions extends KoalaBaseListener {
     public void exitBlockelse(KoalaParser.BlockelseContext ctx) {
         LLVMGenerator.elseend();
     }
+    //WHILE
+    @Override
+    public void enterWhileloop(KoalaParser.WhileloopContext ctx) {
+        LLVMGenerator.enterwhile();
+    }
+    @Override
+    public void enterWhilecond(KoalaParser.WhilecondContext ctx) {
+        LLVMGenerator.exitwhile();
+    }
+    @Override
+    public void enterBlockwhile(KoalaParser.BlockwhileContext ctx) {
+        LLVMGenerator.enterblockwhile();
+    }
+    @Override
+    public void exitBlockwhile(KoalaParser.BlockwhileContext ctx) {
+        LLVMGenerator.exitblockwhile();
+    }
+
 
     @Override
     public void exitEqual(KoalaParser.EqualContext ctx) {
