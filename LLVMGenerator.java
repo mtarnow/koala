@@ -210,6 +210,20 @@ class LLVMGenerator{
       main_text += "br label %false"+b+"\n";
       main_text += "false"+b+":\n";
    }
+
+   static void elsestart(){
+      int b = brstack.pop();
+      main_text += "br label %end"+b+"\n";
+      main_text += "false"+b+":\n";
+      brstack.push(b);
+   }
+
+   static void elseend(){
+      int b = brstack.pop();
+      main_text += "br label %end"+b+"\n";
+      main_text += "end"+b+":\n";
+   }
+
    static void oeq(String value, String value2){
       main_text += "%"+reg+" = fcmp oeq double "+value+", "+value2+"\n";
       reg++;

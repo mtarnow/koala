@@ -10,14 +10,17 @@ block: (stat NEWLINE)*
 blockif: block
 ;
 
+blockifelse: block
+;
+
 blockelse: block
 ;
 
 blockfun: block
 ;
 
-stat: IF '('cond ')' NEWLINE blockif END                 #if
-    | IF '(' cond ')' blockif ELSE blockelse END         #ifelse
+stat: IF '(' cond ')' NEWLINE blockifelse ELSE NEWLINE blockelse END #ifelse
+    | IF '('cond ')' NEWLINE blockif END                 #if
     | FUNCTION funname '(' ID (',' ID)* ')' blockfun END #fun
     | PRINT strexpr   	                                 #print
 	| ID '=' expr0		                                 #assign
@@ -63,6 +66,8 @@ strexpr: STRING                 #string
         | strexpr ADD strexpr	#stradd
     ;
 
+ELSE: 'else'
+;
 
 PRINT:	'print' 
     ;
@@ -117,8 +122,7 @@ RET: 'return'
 funname: ID
 ;
 
-ELSE: 'else'
-;
+
 
 FUNCTION: 'function'
 ;

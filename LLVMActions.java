@@ -27,7 +27,7 @@ public class LLVMActions extends KoalaBaseListener {
     HashMap<String, TypeInfo> variables = new HashMap<String, TypeInfo>();
     Stack<Value> stack = new Stack<Value>();
 
-    //DONE ROZKMINA
+
     @Override
     public void exitAssign(KoalaParser.AssignContext ctx) {
         String ID = ctx.ID().getText();
@@ -63,13 +63,12 @@ public class LLVMActions extends KoalaBaseListener {
             variables.get(ID).type = v.type;
         }
     }
-    //tutaj tylko dopisanie tych wszystkich funkcji które sa nam potrzebne
+
     @Override
     public void exitProg(KoalaParser.ProgContext ctx) {
         System.out.println( LLVMGenerator.generate() );
     }
 
-    //TEgo nie ogarniam tzn to są  te dziwne działania na stringach
     @Override
     public void exitString(KoalaParser.StringContext ctx) {
         String val = ctx.STRING().getText();
@@ -316,6 +315,20 @@ public class LLVMActions extends KoalaBaseListener {
     public void exitIf(KoalaParser.IfContext ctx) {
     }
 
+    @Override public void enterBlockifelse(KoalaParser.BlockifelseContext ctx){
+        LLVMGenerator.ifstart();
+    }
+
+    @Override
+    public void enterBlockelse(KoalaParser.BlockelseContext ctx) {
+        LLVMGenerator.elsestart();
+    }
+
+    @Override
+    public void exitBlockelse(KoalaParser.BlockelseContext ctx) {
+        LLVMGenerator.elseend();
+    }
+
     @Override
     public void exitEqual(KoalaParser.EqualContext ctx) {
         Value v1 = stack.pop();
@@ -329,7 +342,7 @@ public class LLVMActions extends KoalaBaseListener {
             if (v1.type == VarType.STRING)
                 error(ctx.getStart().getLine(), "koala doesn't know how compare Strings :C");
         } else {
-            error(ctx.getStart().getLine(), "add type mismatch");
+            error(ctx.getStart().getLine(), "type mismatch");
         }
     }
 
@@ -346,7 +359,7 @@ public class LLVMActions extends KoalaBaseListener {
             if (v1.type == VarType.STRING)
                 error(ctx.getStart().getLine(), "koala doesn't know how compare Strings :C");
         } else {
-            error(ctx.getStart().getLine(), "add type mismatch");
+            error(ctx.getStart().getLine(), "type mismatch");
         }
     }
 
