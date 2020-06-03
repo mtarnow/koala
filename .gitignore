@@ -28,3 +28,8 @@ hs_err_pid*
 
 # Compiled files
 *.ll
+/output
+
+# My PC
+!func.ll
+note.txt

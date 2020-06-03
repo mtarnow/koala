@@ -15,7 +15,7 @@ blockfun: block
 
 stat: IF '(' cond ')' blockif END #if
 	| IF '(' cond ')' blockif ELSE blockelse END #ifelse
-	| FUNCTION funname '(' ID (',' ID)* ')' blockfun END #fun
+	| FUNCTION funname '(' defparam (',' defparam)* ')' blockfun END #fun
 	| RET expr0
 ;
 
@@ -26,6 +26,9 @@ RET: 'return'
 ;
 
 funname: ID
+;
+
+defparam: ID
 ;
 
 IF: 'if'

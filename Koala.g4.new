@@ -1,0 +1,81 @@
+grammar Koala;
+
+prog: 		(stat? NEWLINE)*
+;
+
+stat:		  PRINT strExpr     #print
+			| ID '=' expr       #assign
+			| READ              #read
+;
+
+expr:		  addExpr
+			| strExpr
+;
+
+addExpr:	multExpr ((PLUS|MINUS) multExpr)*   #addSub
+;
+
+multExpr:  	atom ((MULT|DIV) atom)*     #multDiv
+;
+
+atom:  		  INT               #int
+			| DOUBLE            #double
+			| ID                #id
+			| cast              #cast
+			| '(' expr0 ')'     #par
+;
+
+cast:		  TOINT (atom|strExpr)			#toInt
+			| TODOUBLE (atom|strExpr)		#toDouble
+;
+
+strExpr:      STRING                    #string
+            | ID                        #strId
+		    | '(' strExpr ')'           #strPar
+			| strExpr PLUS strExpr      #strAdd
+;
+
+PRINT:      'print'
+;
+
+READ:       'input'
+;
+
+TOINT:      '(int)'
+;
+
+TODOUBLE:   '(double)'
+;
+
+TOSTRING:	'(str)'
+;
+
+ID:   		('a'..'z'|'A'..'Z')+
+;
+
+DOUBLE: 	'0'..'9'+'.''0'..'9'+
+;
+
+INT: 		'0'..'9'+
+;
+
+STRING:     '"' ( ~('\\'|'"') )* '"'
+;
+
+PLUS: 		'+'
+;
+
+MINUS: 		'-'
+;
+
+MULT: 		'*'
+;
+	
+DIV: 		'/'
+;
+	
+NEWLINE:	'\r'? '\n'
+;
+
+WS:   		(' '|'\t')+ { skip(); }
+;

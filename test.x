@@ -1,5 +1,5 @@
 read d
-print d
+print =  d
 d = "edf"
 print d
 e = d

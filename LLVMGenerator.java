@@ -7,6 +7,21 @@ class LLVMGenerator{
    static int str_reg = 1;
    static int tmp_reg = 1;
 
+   static void functionstart(String id){
+      main_text += buffer;
+      main_tmp = tmp;
+      buffer = "define i32 @"+id+"() nounwind {\n";
+      tmp = 1;
+   }
+
+   static void functionend(){
+      buffer += "ret i32 %"+(tmp-1)+"\n";
+      buffer += "}\n";
+      header_text += buffer;
+      buffer = "";
+      tmp = main_tmp;
+   }
+
    static void printf(String value){
       main_text += "%"+reg+" = getelementptr inbounds [10000 x i8], [10000 x i8]* "+value+".0, i32 0, i32 0\n";
       reg++;
