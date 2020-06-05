@@ -1,4 +1,5 @@
 
+import java.lang.reflect.Type;
 import java.util.*;
 import java.lang.reflect.Method;
 
@@ -49,6 +50,7 @@ class FunctionInfo {
 
     public ArrayList<FunctionStatement> statements = new ArrayList<FunctionStatement>();
     public ArrayList<ArrayList<VarType>> calledWithTypes = new ArrayList<ArrayList<VarType>>();
+    public ArrayList<VarType> retTypes = new ArrayList<VarType>();
 }
 
 public class LLVMActions extends KoalaBaseListener {
@@ -61,46 +63,53 @@ public class LLVMActions extends KoalaBaseListener {
     FunctionInfo functionInfo;
 
     // call context
-    Boolean global = true;
-    FunctionInfo calledFunction;
+    static Boolean global = true;
+    static VarType returnedType;
+    static FunctionInfo calledFunction;
     Stack<ArrayList<VarType>> callTypeStack = new Stack<ArrayList<VarType>>();
     ArrayList<VarType> callTypes = new ArrayList<VarType>();
     Stack<ArrayList<Value>> argumentValueStack = new Stack<ArrayList<Value>>();
 
     HashMap<String, TypeInfo> globalVariables = new HashMap<String, TypeInfo>();
     Stack<HashMap<String, TypeInfo>> localVariableStack = new Stack<HashMap<String, TypeInfo>>();
-    HashMap<String, TypeInfo> localVariables = new HashMap<String, TypeInfo>();
+    static HashMap<String, TypeInfo> localVariables = new HashMap<String, TypeInfo>();
     HashMap<String, FunctionInfo> functions = new HashMap<String, FunctionInfo>();
     Stack<Value> stack = new Stack<Value>();
 
+    @Override
+    public void enterProg(KoalaParser.ProgContext ctx) {
+        // initialize global buffer and register
+        LLVMGenerator.scopeBufferStack.push("");
+        LLVMGenerator.scopeRegisterStack.push(1);
+    }
+
 	@Override
-    public void exitFunname(DemoParser.FunnameContext ctx) {
+    public void exitFunname(KoalaParser.FunnameContext ctx) {
         if (!functionDefContext) {
             String ID = ctx.ID().getText();
             if (!functions.containsKey(ID)) {
                 functionName = ID;
                 functionInfo = new FunctionInfo();
-
                 functionDefContext = true;
             } else {
-                error(ctx.getStart().getLine(), "function "+ID+" already defined");
+                error(Integer.toString(ctx.getStart().getLine()), "function "+ID+" already defined");
             }
         } else {
-            error(ctx.getStart().getLine(), "can't define function in local scope");
+            error(Integer.toString(ctx.getStart().getLine()), "can't define function in local scope");
         }
     }
 
 	@Override
-    public void exitDefparam(DemoParser.DefparamContext ctx) {
+    public void exitDefparam(KoalaParser.DefparamContext ctx) {
         String ID = ctx.ID().getText();
         if (!functionInfo.fargNames.contains(ID))
             functionInfo.fargNames.add(ID);
         else
-            error(ctx.getStart().getLine(), "argument names must be unique");
+            error(Integer.toString(ctx.getStart().getLine()), "argument names must be unique");
     }
 
 	@Override
-    public void enterBlockfun(DemoParser.BlockfunContext ctx) {
+    public void enterBlockfun(KoalaParser.BlockfunContext ctx) {
         try {
             functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doEnterBlockfun", functionName.getClass()), functionName));
         } catch (Exception ignored) {}
@@ -113,7 +122,7 @@ public class LLVMActions extends KoalaBaseListener {
     }
 
 	@Override
-    public void exitBlockfun(DemoParser.BlockfunContext ctx) {
+    public void exitBlockfun(KoalaParser.BlockfunContext ctx) {
         try {
             functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doExitBlockfun")));
         } catch (Exception ignored) {}
@@ -129,7 +138,7 @@ public class LLVMActions extends KoalaBaseListener {
     }
 
 	@Override
-    public void enterCall(DemoParser.CallContext ctx) {
+    public void enterCall(KoalaParser.CallContext ctx) {
         if (functionDefContext) {
             try {
                 functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doEnterCall")));
@@ -145,7 +154,7 @@ public class LLVMActions extends KoalaBaseListener {
     }
 
 	@Override
-    public void exitCall(DemoParser.CallContext ctx) {
+    public void exitCall(KoalaParser.CallContext ctx) {
         String ID = ctx.ID().getText();
         String line = Integer.toString(ctx.getStart().getLine());
         if (functionDefContext) {
@@ -164,14 +173,20 @@ public class LLVMActions extends KoalaBaseListener {
             calledFunction = functions.get(ID);
             callTypes = callTypeStack.pop();
             ArrayList<Value> argumentValues = argumentValueStack.pop();
-            if (callTypes.size() == functionInfo.fargNames.size()) {
-                if (!functionInfo.calledWithTypes.contains(callTypes)) {
+            if (callTypes.size() == calledFunction.fargNames.size()) {
+                if (!calledFunction.calledWithTypes.contains(callTypes)) {
                     localVariables = new HashMap<String, TypeInfo>();
                     localVariableStack.push(localVariables);
-                    for (int i = 0; i < argumentValues.size(); i++)
-                        localVariables.put(calledFunction.fargNames.get(i), new TypeInfo(callTypes.get(i)));
-                    functionInfo.calledWithTypes.add(callTypes);
-                    for (FunctionStatement stm : functionInfo.statements) {
+                    for (int i = 0; i < argumentValues.size(); i++) {
+                        VarType type = callTypes.get(i);
+                        localVariables.put(calledFunction.fargNames.get(i), new TypeInfo(type));
+                        if (type == VarType.INT || type == VarType.REAL)
+                            localVariables.get(calledFunction.fargNames.get(i)).numberDeclared = true;
+                        else if (type == VarType.STRING)
+                            localVariables.get(calledFunction.fargNames.get(i)).stringDeclared = true;
+                    }
+                    calledFunction.calledWithTypes.add(callTypes);
+                    for (FunctionStatement stm : calledFunction.statements) {
                         try {
                             if (stm.args.size() == 0)
                                 stm.method.invoke(this);
@@ -181,9 +196,12 @@ public class LLVMActions extends KoalaBaseListener {
                                 stm.method.invoke(this, stm.args.get(0), stm.args.get(1));
                         } catch (Exception ignored) {}
                     }
+                    calledFunction.retTypes.add(returnedType);
                 }
-                LLVMGenerator.call(ID, argumentValues);
-                stack.push(...);
+                int i = calledFunction.calledWithTypes.indexOf(callTypes);
+                VarType retType = calledFunction.retTypes.get(i);
+                LLVMGenerator.call(ID, argumentValues, callTypes, retType);
+                stack.push(new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), retType));
             } else {
                 error(line, "number of arguments for function "+ID+" doesn't match the definition");
             }
@@ -194,7 +212,7 @@ public class LLVMActions extends KoalaBaseListener {
     }
 
 	@Override
-    public void exitFparam(DemoParser.FparamContext ctx) {
+    public void exitFparam(KoalaParser.FparamContext ctx) {
         if (functionDefContext) {
             try {
                 functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doExitFparam")));
@@ -210,40 +228,27 @@ public class LLVMActions extends KoalaBaseListener {
         callTypeStack.peek().add(v.type);
     }
 
-    public String set_variable(String ID, TypeInfo t){
-        String id;
-        if(global){
-            if(!globalVariables.containsKey(ID) ) {
-                globalVariables.put(ID, t);
-                LLVMGenerator.declare(ID, true);
-            }
-            id = "@"+ID;
-        } else {
-            if(!localVariables.containsKey(ID) ) {
-                localVariables.put(ID, t);
-                LLVMGenerator.declare(ID, false);
-            }
-            id = "%"+ID;
-        }
-        return id;
-    }
-
 	@Override
-    public void exitRet(DemoParser.RetContext ctx) {
-        if (functionDefContext) {
+    public void exitRet(KoalaParser.RetContext ctx) {
+        String line = Integer.toString(ctx.getStart().getLine());
+	    if (functionDefContext) {
             try {
-                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doExitRet")));
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doExitRet",
+                                            line.getClass()), line));
             } catch (Exception ignored) {}
         } else {
-            doExitRet();
+            doExitRet(line);
         }
     }
 
-    public void doExitRet() {
-        //TODO: this probably has to get v from context, because nothing before it puts the value on the stack
+    public void doExitRet(String line) {
         Value v = stack.pop();
-        //LLVMGenerator.load( "%"+function );
-        LLVMGenerator.ret(v);
+        VarType retType = LLVMGenerator.returnTypeStack.peek();
+        if (retType == VarType.UNKNOWN || v.type == retType) {
+            LLVMGenerator.ret(v);
+        } else {
+            error(line, "all return statements must return a value of the same type");
+        }
     }
 
     //TODO: handle local and global scope
@@ -252,7 +257,7 @@ public class LLVMActions extends KoalaBaseListener {
         String ID = ctx.ID().getText();
         if (functionDefContext) {
             try {
-                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doExitRet", ID.getClass()), ID));
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doExitAssign", ID.getClass()), ID));
             } catch (Exception ignored) {}
         } else {
             doExitAssign(ID);
@@ -263,9 +268,11 @@ public class LLVMActions extends KoalaBaseListener {
     public void doExitAssign(String ID) {
         HashMap<String, TypeInfo> variables = global ? globalVariables : localVariables;
         Value v = stack.pop();
-        if (!existsInScope(ID))
+        //if (!existsInScope(ID))
+        if (!variables.containsKey(ID))
             variables.put(ID, new TypeInfo(v.type));
-        TypeInfo variable = getFromScope(ID);
+        //TypeInfo variable = getFromScope(ID);
+        TypeInfo variable = variables.get(ID);
 
         if( v.type == VarType.STRING ) {
             if (!variable.stringDeclared) {
@@ -310,6 +317,14 @@ public class LLVMActions extends KoalaBaseListener {
         }
     }
 
+    public boolean inLocalScope(String ID) {
+        if (global) {
+            return false;
+        } else {
+            return localVariables.containsKey(ID);
+        }
+    }
+
 	@Override
     public void exitProg(KoalaParser.ProgContext ctx) {
         System.out.println( LLVMGenerator.generate() );
@@ -327,12 +342,13 @@ public class LLVMActions extends KoalaBaseListener {
             }
         } else {
             doExitString(val);
+            doExitString(val);
         }
     }
 
-    public void doExitString(Object val) {
-        LLVMGenerator.createStringConst((String) val);
-        stack.push( new Value("@.str."+(LLVMGenerator.str_reg-1), VarType.STRING) );
+    public void doExitString(String val) {
+        LLVMGenerator.createStringConst(val);
+        stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.STRING) );
     }
 
     //TODO: handle local and global scope
@@ -349,8 +365,8 @@ public class LLVMActions extends KoalaBaseListener {
         }
     }
 
-    public void doExitInt(Object val) {
-        stack.push( new Value((String) val, VarType.INT) );
+    public void doExitInt(String val) {
+        stack.push( new Value(val, VarType.INT) );
     }
 
     //TODO: handle local and global scope
@@ -367,8 +383,8 @@ public class LLVMActions extends KoalaBaseListener {
         }
     }
 
-    public void doExitReal(Object val) {
-        stack.push( new Value((String) val, VarType.REAL) );
+    public void doExitReal(String val) {
+        stack.push( new Value(val, VarType.REAL) );
     }
 
 	@Override
@@ -387,7 +403,7 @@ public class LLVMActions extends KoalaBaseListener {
     }
 
     @Override
-    public void exitStrId(KoalaParser.IdContext ctx) {
+    public void exitStrid(KoalaParser.StridContext ctx) {
         String ID = ctx.ID().getText();
         String line = Integer.toString(ctx.getStart().getLine());
         if (functionDefContext) {
@@ -404,17 +420,20 @@ public class LLVMActions extends KoalaBaseListener {
     public void doExitId(String ID, String line) {
         if (existsInScope(ID)) {
             TypeInfo variable = getFromScope(ID);
+            boolean inLocal = inLocalScope(ID);
+            String prefix = inLocal ? "%" : "@";
             VarType type = variable.type;
             if (type == VarType.STRING) {
-                stack.push(new Value("%" + (ID), VarType.STRING));
+                LLVMGenerator.getelementptr(ID, prefix);
+                stack.push(new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.STRING));
             }
             if(type == VarType.INT){
-                LLVMGenerator.load_i32(ID);
-                stack.push( new Value("%"+(LLVMGenerator.reg-1), VarType.INT) );
+                LLVMGenerator.load_i32(ID, prefix);
+                stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.INT) );
             }
             if(type == VarType.REAL){
-                LLVMGenerator.load_double(ID);
-                stack.push( new Value("%"+(LLVMGenerator.reg-1), VarType.REAL) );
+                LLVMGenerator.load_double(ID, prefix);
+                stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.REAL) );
             }
         } else {
             error(line, "unknown variable "+ID);
@@ -442,15 +461,15 @@ public class LLVMActions extends KoalaBaseListener {
         if( v1.type == v2.type ) {
             /*if( v1.type == VarType.STRING ){
                 LLVMGenerator.add_string(v1.name, v2.name);
-                stack.push( new Value("%"+(LLVMGenerator.reg-1), VarType.INT) );
+                stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.INT) );
             }*/
             if( v1.type == VarType.INT ){
                 LLVMGenerator.add_i32(v1.name, v2.name);
-                stack.push( new Value("%"+(LLVMGenerator.reg-1), VarType.INT) );
+                stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.INT) );
             }
             if( v1.type == VarType.REAL ){
                 LLVMGenerator.add_double(v1.name, v2.name);
-                stack.push( new Value("%"+(LLVMGenerator.reg-1), VarType.REAL) );
+                stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.REAL) );
             }
         } else {
             error(line, "type mismatch for operation '+'");
@@ -478,11 +497,11 @@ public class LLVMActions extends KoalaBaseListener {
         if( v1.type == v2.type ) {
             if( v1.type == VarType.INT ){
                 LLVMGenerator.sub_i32(v1.name, v2.name);
-                stack.push( new Value("%"+(LLVMGenerator.reg-1), VarType.INT) );
+                stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.INT) );
             }
             if( v1.type == VarType.REAL ){
                 LLVMGenerator.sub_double(v1.name, v2.name);
-                stack.push( new Value("%"+(LLVMGenerator.reg-1), VarType.REAL) );
+                stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.REAL) );
             }
         } else {
             error(line, "type mismatch for operation '-'");
@@ -510,11 +529,11 @@ public class LLVMActions extends KoalaBaseListener {
         if( v1.type == v2.type ) {
             if( v1.type == VarType.INT ){
                 LLVMGenerator.mult_i32(v1.name, v2.name);
-                stack.push( new Value("%"+(LLVMGenerator.reg-1), VarType.INT) );
+                stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.INT) );
             }
             if( v1.type == VarType.REAL ){
                 LLVMGenerator.mult_double(v1.name, v2.name);
-                stack.push( new Value("%"+(LLVMGenerator.reg-1), VarType.REAL) );
+                stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.REAL) );
             }
         } else {
             error(line, "type mismatch for operation '*'");
@@ -543,11 +562,11 @@ public class LLVMActions extends KoalaBaseListener {
             if( v1.type == v2.type ) {
                 if( v1.type == VarType.INT ){
                     LLVMGenerator.div_i32(v1.name, v2.name);
-                    stack.push( new Value("%"+(LLVMGenerator.reg-1), VarType.INT) );
+                    stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.INT) );
                 }
                 if( v1.type == VarType.REAL ){
                     LLVMGenerator.div_double(v1.name, v2.name);
-                    stack.push( new Value("%"+(LLVMGenerator.reg-1), VarType.REAL) );
+                    stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.REAL) );
                 }
             } else {
                 error(line, "type mismatch for operation '/'");
@@ -575,7 +594,7 @@ public class LLVMActions extends KoalaBaseListener {
         Value v = stack.pop();
         if (v.type == VarType.INT || v.type == VarType.REAL) {
             LLVMGenerator.tostring( v.name, v.type );
-            stack.push( new Value("%_tmp."+(LLVMGenerator.tmp_reg-1), VarType.STRING) );
+            stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-2), VarType.STRING) );
         } else {
             stack.push(v);
         }
@@ -613,7 +632,7 @@ public class LLVMActions extends KoalaBaseListener {
             LLVMGenerator.fptosi( v.name );
         else if (v.type == VarType.STRING)
             LLVMGenerator.atoi( v.name );
-        stack.push( new Value("%"+(LLVMGenerator.reg-1), VarType.INT) );
+        stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.INT) );
     }
 
     //TODO: handle local and global scope
@@ -648,7 +667,7 @@ public class LLVMActions extends KoalaBaseListener {
             LLVMGenerator.sitofp( v.name );
         else if (v.type == VarType.STRING)
             LLVMGenerator.atof( v.name );
-        stack.push( new Value("%"+(LLVMGenerator.reg-1), VarType.REAL) );
+        stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.REAL) );
     }
 
     //TODO: handle local and global scope

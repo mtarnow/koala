@@ -1,13 +1,21 @@
-read d
-print =  d
-d = "edf"
-print d
-e = d
-print e
-e = "10"
-print e
-a = 11
-b = 1 + 4 - (int) e - (a+10) / 2 / 3
-print (str) b
-aa = 12.7
-print (str)( (real) (int) e * 4.5 + aa - 2.4)
+function myfun(x)
+print (str)((int)x + 1)
+print a
+a = "edf"
+print a
+return a
+end
+
+function myfunn(x)
+print (str)((int)x + 1)
+print a
+a = "2"
+print a
+return a
+end
+
+read a
+print a
+c = myfun(myfunn(a))
+print a
+print c

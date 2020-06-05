@@ -26,10 +26,11 @@ hs_err_pid*
 .idea
 *.iml
 
-# Compiled files
+# Compiled and development files
+*.c
 *.ll
 /output
 
 # My PC
-!func.ll
+!myfunc.ll
 note.txt

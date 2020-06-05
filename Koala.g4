@@ -1,17 +1,26 @@
 grammar Koala;
 
-prog: ( stat? NEWLINE )* 
+prog: block
 ;
 
-stat:     PRINT strexpr   	#print
-        | ID '=' expr0		#assign
-	    | READ ID		    #read
+block: (stat NEWLINE)*
 ;
 
-expr0:    expr1			    #single0
-        | expr0 ADD expr0	#add
-	    | expr0 SUB expr0	#sub
-	    | strexpr		    #strexp
+blockfun: block
+;
+
+stat:     PRINT strexpr   	                                                                #print
+        | ID '=' expr0		                                                                #assign
+	    | READ ID		                                                                    #read
+	    | FUNCTION funname '(' defparam (',' defparam)* ')' NEWLINE blockfun END NEWLINE    #fun
+        | RET expr0                                                                         #ret
+;
+
+expr0:    expr1			                        #single0
+        | expr0 ADD expr0	                    #add
+	    | expr0 SUB expr0	                    #sub
+	    | strexpr		                        #strexp
+	    | ID '(' (fparam (',' fparam)*)? ')'    #call
 ;
 
 expr1:  expr2			    #single1
@@ -35,6 +44,24 @@ strexpr:  STRING                #string
         | '(' strexpr ')'	    #strpar
         |  strexpr ADD strexpr	#stradd
     ;
+
+funname: ID
+;
+
+defparam: ID
+;
+
+fparam: expr0
+;
+
+FUNCTION: 'function'
+;
+
+END: 'end'
+;
+
+RET: 'return'
+;
 
 PRINT: 'print'
 ;
