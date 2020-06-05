@@ -81,7 +81,335 @@ public class LLVMActions extends KoalaBaseListener {
         // initialize global buffer and register
         LLVMGenerator.scopeBufferStack.push("");
         LLVMGenerator.scopeRegisterStack.push(1);
+        LLVMGenerator.scopeBrStack.push(1);
+        LLVMGenerator.scopeBrstackStack.push(new Stack<Integer>());
     }
+
+    // #########################################################
+
+    @Override public void enterBlockif(KoalaParser.BlockifContext ctx) {
+        if (functionDefContext) {
+            try {
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doEnterBlockif")));
+            } catch (Exception ignored) {
+            }
+        } else {
+            doEnterBlockif();
+        }
+    }
+
+    public void doEnterBlockif() {
+        LLVMGenerator.ifstart();
+    }
+
+    @Override
+    public void exitBlockif(KoalaParser.BlockifContext ctx) {
+        if (functionDefContext) {
+            try {
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doExitBlockif")));
+            } catch (Exception ignored) {
+            }
+        } else {
+            doExitBlockif();
+        }
+    }
+
+    public void doExitBlockif() {
+        LLVMGenerator.ifend();
+    }
+
+    @Override public void enterBlockifelse(KoalaParser.BlockifelseContext ctx){
+        if (functionDefContext) {
+            try {
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doEnterBlockifelse")));
+            } catch (Exception ignored) {
+            }
+        } else {
+            doEnterBlockifelse();
+        }
+    }
+
+    public void doEnterBlockifelse() {
+        LLVMGenerator.ifstart();
+    }
+
+    @Override
+    public void enterBlockelse(KoalaParser.BlockelseContext ctx) {
+        if (functionDefContext) {
+            try {
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doEnterBlockelse")));
+            } catch (Exception ignored) {
+            }
+        } else {
+            doEnterBlockelse();
+        }
+    }
+
+    public void doEnterBlockelse() {
+        LLVMGenerator.elsestart();
+    }
+
+    @Override
+    public void exitBlockelse(KoalaParser.BlockelseContext ctx) {
+        if (functionDefContext) {
+            try {
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doExitBlockelse")));
+            } catch (Exception ignored) {
+            }
+        } else {
+            doExitBlockelse();
+        }
+    }
+
+    public void doExitBlockelse() {
+        LLVMGenerator.elseend();
+    }
+    //WHILE
+    @Override
+    public void enterWhileloop(KoalaParser.WhileloopContext ctx) {
+        if (functionDefContext) {
+            try {
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doEnterWhileloop")));
+            } catch (Exception ignored) {
+            }
+        } else {
+            doEnterWhileloop();
+        }
+    }
+
+    public void doEnterWhileloop() {
+        LLVMGenerator.enterwhile();
+    }
+    @Override
+    public void enterWhilecond(KoalaParser.WhilecondContext ctx) {
+        if (functionDefContext) {
+            try {
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doEnterWhilecond")));
+            } catch (Exception ignored) {
+            }
+        } else {
+            doEnterWhilecond();
+        }
+    }
+
+    public void doEnterWhilecond() {
+        LLVMGenerator.exitwhile();
+    }
+    @Override
+    public void enterBlockwhile(KoalaParser.BlockwhileContext ctx) {
+        if (functionDefContext) {
+            try {
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doEnterBlockwhile")));
+            } catch (Exception ignored) {
+            }
+        } else {
+            doEnterBlockwhile();
+        }
+    }
+
+    public void doEnterBlockwhile() {
+        LLVMGenerator.enterblockwhile();
+    }
+    @Override
+    public void exitBlockwhile(KoalaParser.BlockwhileContext ctx) {
+        if (functionDefContext) {
+            try {
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doExitBlockwhile")));
+            } catch (Exception ignored) {
+            }
+        } else {
+            doExitBlockwhile();
+        }
+    }
+
+    public void doExitBlockwhile() {
+        LLVMGenerator.exitblockwhile();
+    }
+
+
+    @Override
+    public void exitEqual(KoalaParser.EqualContext ctx) {
+        String line = Integer.toString(ctx.getStart().getLine());
+        if (functionDefContext) {
+            try {
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doExitEqual",
+                        line.getClass()), line));
+            } catch (Exception ignored) {
+            }
+        } else {
+            doExitEqual(line);
+        }
+    }
+
+    public void doExitEqual(String line) {
+        Value v1 = stack.pop();
+        Value v2 = stack.pop();
+        if( v1.type == v2.type ) {
+            if( v1.type == VarType.INT )
+                LLVMGenerator.eq(v2.name, v1.name);
+            if( v1.type == VarType.REAL )
+                LLVMGenerator.oeq(v2.name, v1.name);
+            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            if (v1.type == VarType.STRING)
+                error(line, "koala doesn't know how compare Strings :C");
+        } else {
+            error(line, "type mismatch");
+        }
+    }
+
+    @Override
+    public void exitMore(KoalaParser.MoreContext ctx) {
+        String line = Integer.toString(ctx.getStart().getLine());
+        if (functionDefContext) {
+            try {
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doExitMore",
+                        line.getClass()), line));
+            } catch (Exception ignored) {
+            }
+        } else {
+            doExitMore(line);
+        }
+    }
+
+    public void doExitMore(String line) {
+        Value v1 = stack.pop();
+        Value v2 = stack.pop();
+        if( v1.type == v2.type ) {
+            if( v1.type == VarType.INT )
+                LLVMGenerator.sgt(v2.name, v1.name);
+            if( v1.type == VarType.REAL )
+                LLVMGenerator.ogt(v2.name, v1.name);
+            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            if (v1.type == VarType.STRING)
+                error(line, "koala doesn't know how compare Strings :C");
+        } else {
+            error(line, "type mismatch");
+        }
+    }
+
+    ////////////////
+
+    @Override
+    public void exitLess(KoalaParser.LessContext ctx) {
+        String line = Integer.toString(ctx.getStart().getLine());
+        if (functionDefContext) {
+            try {
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doExitLess",
+                        line.getClass()), line));
+            } catch (Exception ignored) {
+            }
+        } else {
+            doExitLess(line);
+        }
+    }
+
+    public void doExitLess(String line) {
+        Value v1 = stack.pop();
+        Value v2 = stack.pop();
+        if( v1.type == v2.type ) {
+            if( v1.type == VarType.INT )
+                LLVMGenerator.slt(v2.name, v1.name);
+            if( v1.type == VarType.REAL )
+                LLVMGenerator.olt(v2.name, v1.name);
+            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            if (v1.type == VarType.STRING)
+                error(line, "koala doesn't know how compare Strings :C");
+        } else {
+            error(line, " type mismatch");
+        }
+    }
+
+    @Override
+    public void exitNotequal(KoalaParser.NotequalContext ctx) {
+        String line = Integer.toString(ctx.getStart().getLine());
+        if (functionDefContext) {
+            try {
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doExitNotequal",
+                        line.getClass()), line));
+            } catch (Exception ignored) {
+            }
+        } else {
+            doExitNotequal(line);
+        }
+    }
+
+    public void doExitNotequal(String line) {
+        Value v1 = stack.pop();
+        Value v2 = stack.pop();
+        if( v1.type == v2.type ) {
+            if( v1.type == VarType.INT )
+                LLVMGenerator.ne(v2.name, v1.name);
+            if( v1.type == VarType.REAL )
+                LLVMGenerator.une(v2.name, v1.name);
+            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            if (v1.type == VarType.STRING)
+                error(line, "koala doesn't know how compare Strings :C");
+        } else {
+            error(line, "type mismatch");
+        }
+    }
+
+    @Override
+    public void exitLessequal(KoalaParser.LessequalContext ctx) {
+        String line = Integer.toString(ctx.getStart().getLine());
+        if (functionDefContext) {
+            try {
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doExitLessequal",
+                        line.getClass()), line));
+            } catch (Exception ignored) {
+            }
+        } else {
+            doExitLessequal(line);
+        }
+    }
+
+    public void doExitLessequal(String line) {
+        Value v1 = stack.pop();
+        Value v2 = stack.pop();
+        if( v1.type == v2.type ) {
+            if( v1.type == VarType.INT )
+                LLVMGenerator.sle(v2.name, v1.name);
+            if( v1.type == VarType.REAL )
+                LLVMGenerator.ole(v2.name, v1.name);
+            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            if (v1.type == VarType.STRING)
+                error(line, "koala doesn't know how compare Strings :C");
+        } else {
+            error(line, "type mismatch");
+        }
+    }
+
+    @Override
+    public void exitMoreequal(KoalaParser.MoreequalContext ctx) {
+        String line = Integer.toString(ctx.getStart().getLine());
+        if (functionDefContext) {
+            try {
+                functionInfo.statements.add(new FunctionStatement(this.getClass().getMethod("doExitMoreequal",
+                        line.getClass()), line));
+            } catch (Exception ignored) {
+            }
+        } else {
+            doExitMoreequal(line);
+        }
+    }
+
+    public void doExitMoreequal(String line) {
+        Value v1 = stack.pop();
+        Value v2 = stack.pop();
+        if( v1.type == v2.type ) {
+            if( v1.type == VarType.INT )
+                LLVMGenerator.sge(v2.name, v1.name);
+            if( v1.type == VarType.REAL )
+                LLVMGenerator.oge(v2.name, v1.name);
+            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            if (v1.type == VarType.STRING)
+                error(line, "koala doesn't know how compare Strings :C");
+        } else {
+            error(line, "type mismatch");
+        }
+    }
+
+    // #########################################################
 
 	@Override
     public void exitFunname(KoalaParser.FunnameContext ctx) {
@@ -738,5 +1066,4 @@ public class LLVMActions extends KoalaBaseListener {
         System.err.println("Error, line "+line+", "+msg);
         System.exit(1);
     }
-
 }

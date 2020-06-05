@@ -13,6 +13,264 @@ class LLVMGenerator{
    static Stack<Integer> scopeRegisterStack = new Stack<Integer>();
    static Stack<VarType> returnTypeStack = new Stack<VarType>();
 
+   static Stack<Integer> scopeBrStack = new Stack<Integer>();
+   static Stack<Stack<Integer>> scopeBrstackStack = new Stack<Stack<Integer>>();
+
+   static void ifstart(){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+      int br = scopeBrStack.pop();
+      Stack<Integer> brstack = scopeBrstackStack.pop();
+
+      br++;
+      buffer += "br i1 %"+(reg-1)+", label %true"+br+", label %false"+br+"\n";
+      buffer += "true"+br+":\n";
+      brstack.push(br);
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+      scopeBrStack.push(br);
+      scopeBrstackStack.push(brstack);
+   }
+
+   static void ifend(){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+      int br = scopeBrStack.pop();
+      Stack<Integer> brstack = scopeBrstackStack.pop();
+
+      int b = brstack.pop();
+      buffer += "br label %false"+b+"\n";
+      buffer += "false"+b+":\n";
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+      scopeBrStack.push(br);
+      scopeBrstackStack.push(brstack);
+   }
+
+   static void elsestart(){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+      int br = scopeBrStack.pop();
+      Stack<Integer> brstack = scopeBrstackStack.pop();
+
+      int b = brstack.pop();
+      buffer += "br label %end"+b+"\n";
+      buffer += "false"+b+":\n";
+      brstack.push(b);
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+      scopeBrStack.push(br);
+      scopeBrstackStack.push(brstack);
+   }
+
+   static void elseend(){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+      int br = scopeBrStack.pop();
+      Stack<Integer> brstack = scopeBrstackStack.pop();
+
+      int b = brstack.pop();
+      buffer += "br label %end"+b+"\n";
+      buffer += "end"+b+":\n";
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+      scopeBrStack.push(br);
+      scopeBrstackStack.push(brstack);
+   }
+   static void enterwhile() {
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+      int br = scopeBrStack.pop();
+      Stack<Integer> brstack = scopeBrstackStack.pop();
+
+      br++;
+      brstack.push(br);
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+      scopeBrStack.push(br);
+      scopeBrstackStack.push(brstack);
+   }
+
+   static void exitwhile() {
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+      int br = scopeBrStack.pop();
+      Stack<Integer> brstack = scopeBrstackStack.pop();
+
+      int b = brstack.pop();
+      buffer += "br label %while"+b+"\n\n";
+      buffer += "while"+b+":\n";
+      brstack.push(b);
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+      scopeBrStack.push(br);
+      scopeBrstackStack.push(brstack);
+   }
+
+   static void enterblockwhile(){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+      int br = scopeBrStack.pop();
+      Stack<Integer> brstack = scopeBrstackStack.pop();
+
+      int b = brstack.pop();
+      buffer += "br i1 %"+(reg-1)+", label %true"+b+", label %false"+b+"\n";
+      buffer += "true"+b+":\n";
+      brstack.push(b);
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+      scopeBrStack.push(br);
+      scopeBrstackStack.push(brstack);
+   }
+
+   static void exitblockwhile(){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+      int br = scopeBrStack.pop();
+      Stack<Integer> brstack = scopeBrstackStack.pop();
+
+      int b = brstack.pop();
+      buffer += "br label %while"+b+"\n";
+      buffer += "false"+b+":\n";
+      brstack.push(b);
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+      scopeBrStack.push(br);
+      scopeBrstackStack.push(brstack);
+   }
+
+   static void oeq(String value, String value2){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+
+      buffer += "%"+reg+" = fcmp oeq double "+value+", "+value2+"\n";
+      reg++;
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+   }
+   static void eq(String value, String value2){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+
+      buffer += "%"+reg+" = icmp eq i32 "+value+", "+value2+"\n";
+      reg++;
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+   }
+   static void oge(String value, String value2){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+
+      buffer += "%"+reg+" = fcmp oge double "+value+", "+value2+"\n";
+      reg++;
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+   }
+   static void sge(String value, String value2){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+
+      buffer += "%"+reg+" = icmp sge i32 "+value+", "+value2+"\n";
+      reg++;
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+   }
+   static void ole(String value, String value2){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+
+      buffer += "%"+reg+" = fcmp sge double "+value+", "+value2+"\n";
+      reg++;
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+   }
+   static void sle(String value, String value2){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+
+      buffer += "%"+reg+" = icmp sle i32 "+value+", "+value2+"\n";
+      reg++;
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+   }
+
+   static void une(String value, String value2){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+
+      buffer += "%"+reg+" = fcmp une double "+value+", "+value2+"\n";
+      reg++;
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+   }
+   static void ne(String value, String value2){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+
+      buffer += "%"+reg+" = icmp ne i32 "+value+", "+value2+"\n";
+      reg++;
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+   }
+
+   static void olt(String value, String value2){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+
+      buffer += "%"+reg+" = fcmp olt double "+value+", "+value2+"\n";
+      reg++;
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+   }
+   static void slt(String value, String value2){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+
+      buffer += "%"+reg+" = icmp slt i32 "+value+", "+value2+"\n";
+      reg++;
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+   }
+
+   static void ogt(String value, String value2){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+
+      buffer += "%"+reg+" = fcmp ogt double "+value+", "+value2+"\n";
+      reg++;
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+   }
+   static void sgt(String value, String value2){
+      String buffer = scopeBufferStack.pop();
+      int reg = scopeRegisterStack.pop();
+
+      buffer += "%"+reg+" = icmp sgt i32 "+value+", "+value2+"\n";
+      reg++;
+
+      scopeBufferStack.push(buffer);
+      scopeRegisterStack.push(reg);
+   }
+
    static void functionstart(String id, ArrayList<VarType> callTypes){
       String buffer = "@"+id+"(";
       for (int i = 0; i < callTypes.size(); i++) {
@@ -31,6 +289,8 @@ class LLVMGenerator{
       scopeBufferStack.push(buffer);
       scopeRegisterStack.push(1 + callTypes.size());
       returnTypeStack.push(VarType.UNKNOWN);
+      scopeBrStack.push(1);
+      scopeBrstackStack.push(new Stack<Integer>());
 
       initializeLocalVariables();
    }
@@ -74,6 +334,8 @@ class LLVMGenerator{
       String buffer = scopeBufferStack.pop();
       int reg = scopeRegisterStack.pop();
       VarType retType = returnTypeStack.pop();
+      scopeBrStack.pop();
+      scopeBrstackStack.pop();
 
       if (retType == VarType.UNKNOWN) {
          buffer = "define i32 "+buffer;

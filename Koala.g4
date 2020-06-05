@@ -6,6 +6,18 @@ prog: block
 block: (stat NEWLINE)*
 ;
 
+blockif: block
+;
+
+blockifelse: block
+;
+
+blockelse: block
+;
+
+blockwhile: block
+;
+
 blockfun: block
 ;
 
@@ -13,7 +25,21 @@ stat:     PRINT strexpr   	                                                     
         | ID '=' expr0		                                                                #assign
 	    | READ ID		                                                                    #read
 	    | FUNCTION funname '(' defparam (',' defparam)* ')' NEWLINE blockfun END NEWLINE    #fun
+	    | IF '(' cond ')' NEWLINE blockifelse ELSE NEWLINE blockelse END                    #ifelse
+        | IF '('cond ')' NEWLINE blockif END                                                #if
+        | WHILE '(' whilecond ')' NEWLINE blockwhile END                                    #whileloop
         | RET expr0                                                                         #ret
+;
+
+whilecond: cond
+;
+
+cond: expr0 '==' expr0      #equal
+    | expr0 '>' expr0       #more
+    | expr0 '<' expr0       #less
+    | expr0 '!=' expr0      #notequal
+    | expr0 '<=' expr0      #lessequal
+    | expr0 '>=' expr0      #moreequal
 ;
 
 expr0:    expr1			                        #single0
@@ -52,6 +78,15 @@ defparam: ID
 ;
 
 fparam: expr0
+;
+
+IF: 'if'
+;
+
+ELSE: 'else'
+;
+
+WHILE: 'while'
 ;
 
 FUNCTION: 'function'
