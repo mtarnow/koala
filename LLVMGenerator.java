@@ -303,8 +303,6 @@ class LLVMGenerator{
             declare_i32(name);
             String buffer = scopeBufferStack.pop();
             int reg = scopeRegisterStack.pop();
-            //buffer += "%"+reg+" = load i32, i32* %"+(i+1)+"\n";
-            //reg++;
             scopeBufferStack.push(buffer);
             scopeRegisterStack.push(reg);
             assign_i32(name, "%"+i);
@@ -312,8 +310,6 @@ class LLVMGenerator{
             declare_double(name);
             String buffer = scopeBufferStack.pop();
             int reg = scopeRegisterStack.pop();
-            //buffer += "%"+reg+" = load double, double* %"+(i+1)+"\n";
-            //reg++;;
             scopeBufferStack.push(buffer);
             scopeRegisterStack.push(reg);
             assign_double(name, "%"+i);
@@ -321,8 +317,6 @@ class LLVMGenerator{
             declare_string(name);
             String buffer = scopeBufferStack.pop();
             int reg = scopeRegisterStack.pop();
-            //buffer += "%"+reg+" = getelementptr inbounds [10000 x i8], [10000 x i8]* %"+(i+1)+", i32 0, i32 0\n";
-            //reg++;
             scopeBufferStack.push(buffer);
             scopeRegisterStack.push(reg);
             assign_string(name, "%"+i);

@@ -85,7 +85,10 @@ public class LLVMActions extends KoalaBaseListener {
         LLVMGenerator.scopeBrstackStack.push(new Stack<Integer>());
     }
 
-    // #########################################################
+    @Override
+    public void exitProg(KoalaParser.ProgContext ctx) {
+        System.out.println( LLVMGenerator.generate() );
+    }
 
     @Override public void enterBlockif(KoalaParser.BlockifContext ctx) {
         if (functionDefContext) {
@@ -249,7 +252,7 @@ public class LLVMActions extends KoalaBaseListener {
                 LLVMGenerator.eq(v2.name, v1.name);
             if( v1.type == VarType.REAL )
                 LLVMGenerator.oeq(v2.name, v1.name);
-            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            //TODO: Compare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
             if (v1.type == VarType.STRING)
                 error(line, "koala doesn't know how compare Strings :C");
         } else {
@@ -279,15 +282,13 @@ public class LLVMActions extends KoalaBaseListener {
                 LLVMGenerator.sgt(v2.name, v1.name);
             if( v1.type == VarType.REAL )
                 LLVMGenerator.ogt(v2.name, v1.name);
-            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            //TODO: Compare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
             if (v1.type == VarType.STRING)
                 error(line, "koala doesn't know how compare Strings :C");
         } else {
             error(line, "type mismatch");
         }
     }
-
-    ////////////////
 
     @Override
     public void exitLess(KoalaParser.LessContext ctx) {
@@ -311,7 +312,7 @@ public class LLVMActions extends KoalaBaseListener {
                 LLVMGenerator.slt(v2.name, v1.name);
             if( v1.type == VarType.REAL )
                 LLVMGenerator.olt(v2.name, v1.name);
-            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            //TODO: Compare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
             if (v1.type == VarType.STRING)
                 error(line, "koala doesn't know how compare Strings :C");
         } else {
@@ -341,7 +342,7 @@ public class LLVMActions extends KoalaBaseListener {
                 LLVMGenerator.ne(v2.name, v1.name);
             if( v1.type == VarType.REAL )
                 LLVMGenerator.une(v2.name, v1.name);
-            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            //TODO: Compare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
             if (v1.type == VarType.STRING)
                 error(line, "koala doesn't know how compare Strings :C");
         } else {
@@ -371,7 +372,7 @@ public class LLVMActions extends KoalaBaseListener {
                 LLVMGenerator.sle(v2.name, v1.name);
             if( v1.type == VarType.REAL )
                 LLVMGenerator.ole(v2.name, v1.name);
-            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            //TODO: Compare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
             if (v1.type == VarType.STRING)
                 error(line, "koala doesn't know how compare Strings :C");
         } else {
@@ -401,15 +402,13 @@ public class LLVMActions extends KoalaBaseListener {
                 LLVMGenerator.sge(v2.name, v1.name);
             if( v1.type == VarType.REAL )
                 LLVMGenerator.oge(v2.name, v1.name);
-            //TODO: Copare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
+            //TODO: Compare String use strncmp function call i32 @strncmp(i8* %6, i8* %7, i64 2) #4
             if (v1.type == VarType.STRING)
                 error(line, "koala doesn't know how compare Strings :C");
         } else {
             error(line, "type mismatch");
         }
     }
-
-    // #########################################################
 
 	@Override
     public void exitFunname(KoalaParser.FunnameContext ctx) {
@@ -579,7 +578,6 @@ public class LLVMActions extends KoalaBaseListener {
         }
     }
 
-    //TODO: handle local and global scope
 	@Override
     public void exitAssign(KoalaParser.AssignContext ctx) {
         String ID = ctx.ID().getText();
@@ -592,14 +590,11 @@ public class LLVMActions extends KoalaBaseListener {
         }
     }
 
-    // TODO: errors and check if there already exists function with this name. Or maybe you don't have to?
     public void doExitAssign(String ID) {
         HashMap<String, TypeInfo> variables = global ? globalVariables : localVariables;
         Value v = stack.pop();
-        //if (!existsInScope(ID))
         if (!variables.containsKey(ID))
             variables.put(ID, new TypeInfo(v.type));
-        //TypeInfo variable = getFromScope(ID);
         TypeInfo variable = variables.get(ID);
 
         if( v.type == VarType.STRING ) {
@@ -654,12 +649,6 @@ public class LLVMActions extends KoalaBaseListener {
     }
 
 	@Override
-    public void exitProg(KoalaParser.ProgContext ctx) {
-        System.out.println( LLVMGenerator.generate() );
-    }
-
-    //TODO: handle local and global scope
-	@Override
     public void exitString(KoalaParser.StringContext ctx) {
         String val = ctx.STRING().getText();
         val = val.substring(1, val.length()-1);
@@ -679,7 +668,6 @@ public class LLVMActions extends KoalaBaseListener {
         stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.STRING) );
     }
 
-    //TODO: handle local and global scope
 	@Override
     public void exitInt(KoalaParser.IntContext ctx) {
         String val = ctx.INT().getText();
@@ -697,7 +685,6 @@ public class LLVMActions extends KoalaBaseListener {
         stack.push( new Value(val, VarType.INT) );
     }
 
-    //TODO: handle local and global scope
 	@Override
     public void exitReal(KoalaParser.RealContext ctx) {
         String val = ctx.REAL().getText();
@@ -768,7 +755,6 @@ public class LLVMActions extends KoalaBaseListener {
         }
     }
 
-    //TODO: handle local and global scope
 	@Override
     public void exitAdd(KoalaParser.AddContext ctx) {
         String line = Integer.toString(ctx.getStart().getLine());
@@ -804,7 +790,6 @@ public class LLVMActions extends KoalaBaseListener {
         }
     }
 
-    //TODO: handle local and global scope
 	@Override
     public void exitSub(KoalaParser.SubContext ctx) {
         String line = Integer.toString(ctx.getStart().getLine());
@@ -836,7 +821,6 @@ public class LLVMActions extends KoalaBaseListener {
         }
     }
 
-    //TODO: handle local and global scope
 	@Override
     public void exitMult(KoalaParser.MultContext ctx) {
         String line = Integer.toString(ctx.getStart().getLine());
@@ -868,7 +852,6 @@ public class LLVMActions extends KoalaBaseListener {
         }
     }
 
-    //TODO: handle local and global scope
 	@Override
     public void exitDiv(KoalaParser.DivContext ctx) {
         String line = Integer.toString(ctx.getStart().getLine());
@@ -905,7 +888,6 @@ public class LLVMActions extends KoalaBaseListener {
         }
     }
 
-    //TODO: handle local and global scope
 	@Override
     public void exitTostring(KoalaParser.TostringContext ctx) {
         if (functionDefContext) {
@@ -928,7 +910,6 @@ public class LLVMActions extends KoalaBaseListener {
         }
     }
 
-    //TODO: handle local and global scope
 	@Override
     public void exitToint(KoalaParser.TointContext ctx) {
         if (functionDefContext) {
@@ -941,7 +922,6 @@ public class LLVMActions extends KoalaBaseListener {
         }
     }
 
-    //TODO: handle local and global scope
     @Override
     public void exitToint2(KoalaParser.Toint2Context ctx) {
         if (functionDefContext) {
@@ -963,7 +943,6 @@ public class LLVMActions extends KoalaBaseListener {
         stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.INT) );
     }
 
-    //TODO: handle local and global scope
 	@Override
     public void exitToreal(KoalaParser.TorealContext ctx) {
         if (functionDefContext) {
@@ -976,7 +955,6 @@ public class LLVMActions extends KoalaBaseListener {
         }
     }
 
-    //TODO: handle local and global scope
     @Override
     public void exitToreal2(KoalaParser.Toreal2Context ctx) {
         if (functionDefContext) {
@@ -998,7 +976,6 @@ public class LLVMActions extends KoalaBaseListener {
         stack.push( new Value("%"+(LLVMGenerator.scopeRegisterStack.peek()-1), VarType.REAL) );
     }
 
-    //TODO: handle local and global scope
 	@Override
     public void exitPrint(KoalaParser.PrintContext ctx) {
         String line = Integer.toString(ctx.getStart().getLine());
@@ -1022,12 +999,11 @@ public class LLVMActions extends KoalaBaseListener {
             else {
                 error(line, "expected type: STRING, got "+type+" instead");
             }
-        } else { // TODO: not needed
-            error(line, "unknown variable "+v.name);
+        } else {
+            error(line, "undefined variable "+v.name);
         }
     }
 
-    //TODO: handle local and global scope
 	@Override
     public void exitRead(KoalaParser.ReadContext ctx) {
         String ID = ctx.ID().getText();
